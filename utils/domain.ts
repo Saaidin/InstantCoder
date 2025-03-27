@@ -7,4 +7,4 @@ export const domain =
         ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
         : process.env.NEXT_PUBLIC_DEVELOPMENT_URL
           ? process.env.NEXT_PUBLIC_DEVELOPMENT_URL
-          : "http://localhost:3000";
+          : "https://gem-coder-psi.vercel.app";
