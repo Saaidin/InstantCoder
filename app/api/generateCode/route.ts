@@ -26,30 +26,45 @@ export async function POST(req: Request) {
   let { model, messages } = result.data;
   let systemPrompt = getSystemPrompt();
 
-  const geminiModel = genAI.getGenerativeModel({model: model});
-
-  const geminiStream = await geminiModel.generateContentStream(
-    messages[0].content + systemPrompt + "\nPlease ONLY return code, NO backticks or language names. Don't start with \`\`\`typescript or \`\`\`javascript or \`\`\`tsx or \`\`\`."
+  console.log(
+    "GOOGLE_AI_API_KEY value:",
+    apiKey ? "***REDACTED***" : "MISSING",
   );
+  if (!apiKey) {
+    console.error("Missing GOOGLE_AI_API_KEY environment variable");
+    return new Response("Server configuration error", { status: 500 });
+  }
 
-  console.log(messages[0].content + systemPrompt + "\nPlease ONLY return code, NO backticks or language names. Don't start with \`\`\`typescript or \`\`\`javascript or \`\`\`tsx or \`\`\`.")
+  try {
+    const geminiModel = genAI.getGenerativeModel({ model: model });
 
-  const readableStream = new ReadableStream({
-    async start(controller) {
-      for await (const chunk of geminiStream.stream) {
-        const chunkText = chunk.text();
-        controller.enqueue(new TextEncoder().encode(chunkText));
-      }
-      controller.close();
-    },
-  });
+    const geminiStream = await geminiModel.generateContentStream(
+      messages[0].content +
+        systemPrompt +
+        "\nPlease ONLY return code, NO backticks or language names. Don't start with ```typescript or ```javascript or ```tsx or ```.",
+    );
 
-  return new Response(readableStream);
+    console.log("Prompt sent to Gemini:", messages[0].content + systemPrompt);
+
+    const readableStream = new ReadableStream({
+      async start(controller) {
+        for await (const chunk of geminiStream.stream) {
+          const chunkText = chunk.text();
+          controller.enqueue(new TextEncoder().encode(chunkText));
+        }
+        controller.close();
+      },
+    });
+
+    return new Response(readableStream);
+  } catch (error) {
+    console.error("Error calling Gemini API:", error);
+    return new Response("Error generating content", { status: 500 });
+  }
 }
 
 function getSystemPrompt() {
-  let systemPrompt = 
-`You are an expert frontend React engineer who is also a great UI/UX designer. Follow the instructions carefully, I will tip you $1 million if you do a good job:
+  let systemPrompt = `You are an expert frontend React engineer who is also a great UI/UX designer. Follow the instructions carefully, I will tip you $1 million if you do a good job:
 
 - Think carefully step by step.
 - Create a React component for whatever the user asked you to create and make sure it can run by itself by using a default export
@@ -70,4 +85,5 @@ function getSystemPrompt() {
   return dedent(systemPrompt);
 }
 
-export const runtime = "edge";
+// Temporarily disable edge runtime to debug environment variables
+// export const runtime = "edge";

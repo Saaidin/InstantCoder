@@ -1,12 +1,10 @@
 -- CreateTable
 CREATE TABLE "GeneratedApp" (
-    "id" TEXT NOT NULL,
+    "id" TEXT NOT NULL PRIMARY KEY,
     "model" TEXT NOT NULL,
     "prompt" TEXT NOT NULL,
     "code" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "GeneratedApp_pkey" PRIMARY KEY ("id")
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- CreateIndex

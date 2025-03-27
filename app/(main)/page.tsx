@@ -10,9 +10,12 @@ import * as Switch from "@radix-ui/react-switch";
 import { AnimatePresence, motion } from "framer-motion";
 import { FormEvent, useEffect, useState } from "react";
 import LoadingDots from "../../components/loading-dots";
+import { HttpError } from "../../utils/http-error";
 
 function removeCodeFormatting(code: string): string {
-  return code.replace(/```(?:typescript|javascript|tsx)?\n([\s\S]*?)```/g, '$1').trim();
+  return code
+    .replace(/```(?:typescript|javascript|tsx)?\n([\s\S]*?)```/g, "$1")
+    .trim();
 }
 
 export default function Home() {
@@ -22,8 +25,8 @@ export default function Home() {
   let [prompt, setPrompt] = useState("");
   let models = [
     {
-      label: "gemini-2.0-flash-exp",
-      value: "gemini-2.0-flash-exp",
+      label: "gemini-2.5-pro-exp-03-25",
+      value: "gemini-2.5-pro-exp-03-25",
     },
     {
       label: "gemini-1.5-pro",
@@ -32,7 +35,11 @@ export default function Home() {
     {
       label: "gemini-1.5-flash",
       value: "gemini-1.5-flash",
-    }
+    },
+    {
+      label: "gemini-2.0-flash-exp",
+      value: "gemini-2.0-flash-exp",
+    },
   ];
   let [model, setModel] = useState(models[0].value);
   let [modification, setModification] = useState("");
@@ -69,7 +76,18 @@ export default function Home() {
     });
 
     if (!res.ok) {
-      throw new Error(res.statusText);
+      let errorData;
+      try {
+        errorData = await res.json();
+      } catch (e) {
+        errorData = { error: res.statusText };
+      }
+      throw new HttpError({
+        status: res.status,
+        statusText: res.statusText,
+        url: res.url,
+        error: errorData,
+      });
     }
 
     if (!res.body) {
@@ -105,7 +123,7 @@ export default function Home() {
   return (
     <main className="mt-12 flex w-full flex-1 flex-col items-center px-4 text-center sm:mt-1">
       <a
-        className="mb-4 inline-flex h-7 shrink-0 items-center gap-[9px] rounded-[50px] border-[0.5px] border-solid border-[#E6E6E6] bg-[rgba(234,238,255,0.65)] dark:bg-[rgba(30,41,59,0.5)] dark:border-gray-700 px-7 py-5 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25)]"
+        className="mb-4 inline-flex h-7 shrink-0 items-center gap-[9px] rounded-[50px] border-[0.5px] border-solid border-[#E6E6E6] bg-[rgba(234,238,255,0.65)] px-7 py-5 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25)] dark:border-gray-700 dark:bg-[rgba(30,41,59,0.5)]"
         href="https://ai.google.dev/gemini-api/docs"
         target="_blank"
       >
@@ -122,7 +140,7 @@ export default function Home() {
         <fieldset disabled={loading} className="disabled:opacity-75">
           <div className="relative mt-5">
             <div className="absolute -inset-2 rounded-[32px] bg-gray-300/50 dark:bg-gray-800/50" />
-            <div className="relative flex rounded-3xl bg-white dark:bg-[#1E293B] shadow-sm">
+            <div className="relative flex rounded-3xl bg-white shadow-sm dark:bg-[#1E293B]">
               <div className="relative flex flex-grow items-stretch focus-within:z-10">
                 <textarea
                   rows={3}
@@ -149,27 +167,29 @@ export default function Home() {
           </div>
           <div className="mt-6 flex flex-col justify-center gap-4 sm:flex-row sm:items-center sm:gap-8">
             <div className="flex items-center justify-between gap-3 sm:justify-center">
-              <p className="text-gray-500 dark:text-gray-400 sm:text-xs">Model:</p>
+              <p className="text-gray-500 dark:text-gray-400 sm:text-xs">
+                Model:
+              </p>
               <Select.Root
                 name="model"
                 disabled={loading}
                 value={model}
                 onValueChange={(value) => setModel(value)}
               >
-                <Select.Trigger className="group flex w-60 max-w-xs items-center rounded-2xl border-[6px] border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1E293B] px-4 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500">
+                <Select.Trigger className="group flex w-60 max-w-xs items-center rounded-2xl border-[6px] border-gray-300 bg-white px-4 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 dark:border-gray-700 dark:bg-[#1E293B]">
                   <Select.Value />
                   <Select.Icon className="ml-auto">
                     <ChevronDownIcon className="size-6 text-gray-300 group-focus-visible:text-gray-500 group-enabled:group-hover:text-gray-500 dark:text-gray-600 dark:group-focus-visible:text-gray-400 dark:group-enabled:group-hover:text-gray-400" />
                   </Select.Icon>
                 </Select.Trigger>
                 <Select.Portal>
-                  <Select.Content className="overflow-hidden rounded-md bg-white dark:bg-[#1E293B] shadow-lg">
+                  <Select.Content className="overflow-hidden rounded-md bg-white shadow-lg dark:bg-[#1E293B]">
                     <Select.Viewport className="p-2">
                       {models.map((model) => (
                         <Select.Item
                           key={model.value}
                           value={model.value}
-                          className="flex cursor-pointer items-center rounded-md px-3 py-2 text-sm data-[highlighted]:bg-gray-100 dark:data-[highlighted]:bg-gray-800 data-[highlighted]:outline-none"
+                          className="flex cursor-pointer items-center rounded-md px-3 py-2 text-sm data-[highlighted]:bg-gray-100 data-[highlighted]:outline-none dark:data-[highlighted]:bg-gray-800"
                         >
                           <Select.ItemText asChild>
                             <span className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
@@ -225,7 +245,7 @@ export default function Home() {
                     duration: 0.85,
                     delay: 0.5,
                   }}
-                  className="absolute inset-x-0 bottom-0 top-1/2 flex items-center justify-center rounded-r border border-gray-400 dark:border-gray-700 bg-gradient-to-br from-gray-100 to-gray-300 dark:from-[#1E293B] dark:to-gray-800 md:inset-y-0 md:left-1/2 md:right-0"
+                  className="absolute inset-x-0 bottom-0 top-1/2 flex items-center justify-center rounded-r border border-gray-400 bg-gradient-to-br from-gray-100 to-gray-300 dark:border-gray-700 dark:from-[#1E293B] dark:to-gray-800 md:inset-y-0 md:left-1/2 md:right-0"
                 >
                   <p className="animate-pulse text-3xl font-bold dark:text-gray-100">
                     {status === "creating"
